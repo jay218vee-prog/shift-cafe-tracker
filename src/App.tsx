@@ -13,6 +13,7 @@ import Employees from "./pages/Employees.tsx";
 import Shifts from "./pages/Shifts.tsx";
 import Roles from "./pages/Roles.tsx";
 import Reports from "./pages/Reports.tsx";
+import Printer from "./pages/Printer.tsx";
 import { getCurrentUser, hasPermission } from "./lib/storage.ts";
 import type { Permission } from "./lib/types.ts";
 
@@ -81,6 +82,14 @@ const App = () => {
                   element={
                     <Guard perm="settings.roles">
                       <Roles />
+                    </Guard>
+                  }
+                />
+                <Route
+                  path="/settings/printer"
+                  element={
+                    <Guard perm="settings.printer">
+                      <Printer />
                     </Guard>
                   }
                 />

@@ -2,6 +2,7 @@ export type Permission =
   | "settings.employees"
   | "settings.shifts"
   | "settings.roles"
+  | "settings.printer"
   | "reports.view"
   | "reports.edit_entries";
 

@@ -1,7 +1,7 @@
 import { TopBar } from "@/components/TopBar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Users, Clock, Shield, LogOut } from "lucide-react";
+import { ChevronRight, Users, Clock, Shield, LogOut, Printer } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { hasPermission, setCurrentUser } from "@/lib/storage";
 
@@ -78,6 +78,14 @@ const Settings = () => {
               icon={Shield}
               title="Roles & Permissions"
               desc="Hide settings from certain users"
+            />
+          )}
+          {hasPermission("settings.printer") && (
+            <Row
+              to="/settings/printer"
+              icon={Printer}
+              title="Niimbot Printer"
+              desc="Connect via Bluetooth and test print"
             />
           )}
         </Card>
