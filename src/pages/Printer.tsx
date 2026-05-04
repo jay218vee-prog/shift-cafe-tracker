@@ -16,8 +16,18 @@ type Cfg = {
   widthMm: number;
   heightMm: number;
   density: number;
-  direction: "left" | "top";
+  speed: number;
+  direction: "top" | "right" | "bottom" | "left";
   text: string;
+};
+
+const defaults: Cfg = {
+  widthMm: 50,
+  heightMm: 30,
+  density: 3,
+  speed: 3,
+  direction: "top",
+  text: "TEST PRINT",
 };
 
 const loadCfg = (): Cfg => {
@@ -27,19 +37,15 @@ const loadCfg = (): Cfg => {
   } catch {}
   return defaults;
 };
-const defaults: Cfg = {
-  widthMm: 50,
-  heightMm: 30,
-  density: 3,
-  direction: "left",
-  text: "TEST PRINT",
-};
 
 // Niimbot B1 = 203 dpi -> 8 dots per mm
 const MM_TO_DOTS = 8;
 
 const Printer_ = () => {
   const [cfg, setCfg] = useState<Cfg>(loadCfg());
+  const [densityInput, setDensityInput] = useState(cfg.density.toString());
+  const [speedInput, setSpeedInput] = useState(cfg.speed.toString());
+
   const [connected, setConnected] = useState(false);
   const [busy, setBusy] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -51,29 +57,40 @@ const Printer_ = () => {
     localStorage.setItem(PRINTER_KEY, JSON.stringify(next));
   };
 
-  // Round canvas dims to multiple of 8 for B1 bitmap encoding
+  // Logic: The canvas always represents the PHYSICAL label as you see it.
+  // We don't swap dots here anymore; ImageEncoder handles the rotation.
   const widthDots = Math.max(8, Math.round((cfg.widthMm * MM_TO_DOTS) / 8) * 8);
   const heightDots = Math.max(8, Math.round((cfg.heightMm * MM_TO_DOTS) / 8) * 8);
 
   useEffect(() => {
     const c = canvasRef.current;
     if (!c) return;
+
+    // Set actual canvas size to match label aspect ratio
     c.width = widthDots;
     c.height = heightDots;
+
     const ctx = c.getContext("2d")!;
+    // 1. Clear background to absolute white
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, c.width, c.height);
-    ctx.fillStyle = "black";
+
+    // 2. Draw border
     ctx.strokeStyle = "black";
     ctx.lineWidth = 2;
     ctx.strokeRect(2, 2, c.width - 4, c.height - 4);
-    // text
+
+    // 3. Draw text in the center
+    ctx.fillStyle = "black";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    let fontSize = Math.min(c.height / 3, c.width / Math.max(6, cfg.text.length));
-    fontSize = Math.max(14, Math.floor(fontSize));
+
+    const printText = cfg.text.trim() || "TEST PRINT";
+    let fontSize = Math.min(c.height / 2, c.width / Math.max(4, printText.length));
+    fontSize = Math.max(16, Math.floor(fontSize));
+
     ctx.font = `bold ${fontSize}px sans-serif`;
-    ctx.fillText(cfg.text || "TEST PRINT", c.width / 2, c.height / 2);
+    ctx.fillText(printText, c.width / 2, c.height / 2);
   }, [cfg.text, widthDots, heightDots]);
 
   const connect = async () => {
@@ -113,18 +130,25 @@ const Printer_ = () => {
     }
     try {
       setBusy(true);
+      // We pass the canvas and the rotation direction.
+      // "top" is typically 0 deg, "right" 90, "bottom" 180, "left" 270.
       const encoded = ImageEncoder.encodeCanvas(canvas, cfg.direction);
       const printTaskName = client.getPrintTaskType() ?? "B1";
+
       const printTask = client.abstraction.newPrintTask(printTaskName, {
         totalPages: 1,
         statusPollIntervalMs: 100,
         statusTimeoutMs: 8000,
+        density: cfg.density,
+        speed: cfg.speed,
       });
+
       await printTask.printInit();
       await printTask.printPage(encoded, 1);
       await printTask.waitForPageFinished();
       await printTask.waitForFinished();
       await printTask.printEnd();
+
       toast.success("Printed");
     } catch (e: any) {
       toast.error("Print failed: " + (e?.message ?? String(e)));
@@ -155,13 +179,10 @@ const Printer_ = () => {
               {connected ? "Connected" : "Not connected"}
             </span>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Requires Web Bluetooth (Chrome / Capacitor Android). Tested on Niimbot B1.
-          </p>
         </Card>
 
         <Card className="p-4 space-y-3">
-          <div className="text-sm font-semibold">Label size</div>
+          <div className="text-sm font-semibold">Label Configuration</div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Width (mm)</Label>
@@ -182,32 +203,72 @@ const Printer_ = () => {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Direction</Label>
-              <Select value={cfg.direction} onValueChange={(v: "left" | "top") => update({ direction: v })}>
+              <Label>Density (1-5)</Label>
+              <Input
+                type="number"
+                min={1}
+                max={5}
+                value={densityInput}
+                onChange={(e) => {
+                  setDensityInput(e.target.value);
+                  const val = parseInt(e.target.value);
+                  if (!isNaN(val)) update({ density: val });
+                }}
+              />
+            </div>
+            <div>
+              <Label>Speed (1-5)</Label>
+              <Input
+                type="number"
+                min={1}
+                max={5}
+                value={speedInput}
+                onChange={(e) => {
+                  setSpeedInput(e.target.value);
+                  const val = parseInt(e.target.value);
+                  if (!isNaN(val)) update({ speed: val });
+                }}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Text Orientation</Label>
+              <Select value={cfg.direction} onValueChange={(v: any) => update({ direction: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="left">Left</SelectItem>
-                  <SelectItem value="top">Top</SelectItem>
+                  <SelectItem value="top">Standard (0°)</SelectItem>
+                  <SelectItem value="right">Rotated (90°)</SelectItem>
+                  <SelectItem value="bottom">Upside Down (180°)</SelectItem>
+                  <SelectItem value="left">Rotated (270°)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Text</Label>
-              <Input value={cfg.text} onChange={(e) => update({ text: e.target.value })} />
+              <Label>Print Content</Label>
+              <Input
+                placeholder="What to print..."
+                value={cfg.text}
+                onChange={(e) => update({ text: e.target.value })}
+              />
             </div>
           </div>
           <div className="text-xs text-muted-foreground">
-            Canvas: {widthDots} × {heightDots} dots (203 dpi)
+            Label Resolution: {widthDots} × {heightDots} dots
           </div>
         </Card>
 
         <Card className="p-4 space-y-3">
-          <div className="text-sm font-semibold">Preview</div>
-          <div className="flex justify-center bg-muted p-3 rounded-lg overflow-auto">
+          <div className="text-sm font-semibold">Live Preview</div>
+          <div className="flex justify-center bg-muted p-6 rounded-lg overflow-auto">
             <canvas
               ref={canvasRef}
-              className="bg-white"
-              style={{ imageRendering: "pixelated", maxWidth: "100%" }}
+              className="bg-white shadow-lg border border-gray-200"
+              style={{
+                imageRendering: "pixelated",
+                maxWidth: "100%",
+                height: "auto"
+              }}
             />
           </div>
           <Button
