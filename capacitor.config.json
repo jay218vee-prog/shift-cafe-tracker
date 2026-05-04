@@ -1,9 +1,5 @@
 {
-  "appId": "app.lovable.84af58ee68224403942c9f9fac7380a1",
-  "appName": "Cafein Tracker",
-  "webDir": "dist",
-  "server": {
-    "url": "https://84af58ee-6822-4403-942c-9f9fac7380a1.lovableproject.com?forceHideBadge=true",
-    "cleartext": true
-  }
+  "appId": "com.shiftcafe.tracker",
+  "appName": "Shift Cafe Tracker",
+  "webDir": "dist"
 }

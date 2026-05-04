@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Bluetooth, BluetoothConnected, Printer } from "lucide-react";
-import { NiimbotBluetoothClient, ImageEncoder } from "@mmote/niimbluelib";
+import { Bluetooth, BluetoothConnected, Printer as PrinterIcon } from "lucide-react";
+import { NiimbotBluetoothClient, NiimbotCapacitorBleClient, ImageEncoder, NiimbotAbstractClient } from "@mmote/niimbluelib";
+import { Device } from "@capacitor/device";
 
 const PRINTER_KEY = "ctrk.printerCfg";
 
@@ -42,7 +43,7 @@ const Printer_ = () => {
   const [connected, setConnected] = useState(false);
   const [busy, setBusy] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const clientRef = useRef<NiimbotBluetoothClient | null>(null);
+  const clientRef = useRef<NiimbotAbstractClient | null>(null);
 
   const update = (patch: Partial<Cfg>) => {
     const next = { ...cfg, ...patch };
@@ -78,7 +79,11 @@ const Printer_ = () => {
   const connect = async () => {
     try {
       setBusy(true);
-      const client = new NiimbotBluetoothClient();
+      const info = await Device.getInfo();
+      const client = info.platform === "android" || info.platform === "ios"
+        ? new NiimbotCapacitorBleClient()
+        : new NiimbotBluetoothClient();
+
       client.on("connect", () => setConnected(true));
       client.on("disconnect", () => setConnected(false));
       await client.connect();
@@ -210,7 +215,7 @@ const Printer_ = () => {
             disabled={!connected || busy}
             className="w-full h-12 gradient-primary text-primary-foreground"
           >
-            <Printer className="w-4 h-4 mr-1" /> Test Print
+            <PrinterIcon className="w-4 h-4 mr-1" /> Test Print
           </Button>
         </Card>
       </main>
