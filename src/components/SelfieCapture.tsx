@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 interface Props {
   open: boolean;
-  onCancel: () => void;
+  onCancel: () => void; // only called on camera failure
   onCapture: (dataUrl: string) => void;
   autoCaptureSeconds?: number;
 }
@@ -97,7 +97,7 @@ export const SelfieCapture = ({
     <Dialog open={open} onOpenChange={(o) => !o && onCancel()}>
       <DialogContent className="max-w-xs rounded-2xl">
         <DialogHeader>
-          <DialogTitle>Selfie Check-in</DialogTitle>
+          <DialogTitle>Selfie Check-in (required)</DialogTitle>
         </DialogHeader>
         <div className="relative aspect-square rounded-xl overflow-hidden bg-muted">
           <video
@@ -120,11 +120,8 @@ export const SelfieCapture = ({
           )}
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={onCancel}>
-            Skip
-          </Button>
           <Button
-            className="flex-1"
+            className="w-full"
             disabled={!ready}
             onClick={() => {
               setCount(0);
