@@ -32,6 +32,7 @@ import {
 import type { TimeEntry } from "@/lib/types";
 import { toast } from "sonner";
 import { Play, Square, Clock } from "lucide-react";
+import { SelfieCapture } from "@/components/SelfieCapture";
 
 const Index = () => {
   const [active, setActive] = useState<TimeEntry | undefined>(undefined);
@@ -39,6 +40,8 @@ const Index = () => {
   const [open, setOpen] = useState(false);
   const [shiftId, setShiftId] = useState<string>("");
   const [rate, setRate] = useState<number>(0);
+  const [selfieOpen, setSelfieOpen] = useState(false);
+  const [pending, setPending] = useState<{ shiftId: string; rate: number } | null>(null);
   const user = getCurrentUser()!;
   const shifts = loadShifts();
 
@@ -66,17 +69,26 @@ const Index = () => {
   };
 
   const clockIn = () => {
+    setPending({ shiftId, rate });
+    setOpen(false);
+    setSelfieOpen(true);
+  };
+
+  const finalizeClockIn = (selfie?: string) => {
+    if (!pending) return;
     const entry: TimeEntry = {
       id: crypto.randomUUID(),
       employeeId: user.id,
-      shiftId,
-      rate,
+      shiftId: pending.shiftId,
+      rate: pending.rate,
       startedAt: Date.now(),
       endedAt: null,
+      selfie,
     };
     addEntry(entry);
     setActive(entry);
-    setOpen(false);
+    setPending(null);
+    setSelfieOpen(false);
     toast.success("Clocked in");
   };
 
@@ -192,6 +204,12 @@ const Index = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <SelfieCapture
+        open={selfieOpen}
+        onCancel={() => finalizeClockIn(undefined)}
+        onCapture={(d) => finalizeClockIn(d)}
+      />
     </div>
   );
 };

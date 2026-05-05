@@ -83,6 +83,15 @@ const Reports = () => {
             const pay = calcHours(dur) * e.rate;
             return (
               <div key={e.id} className="p-3 flex items-center gap-3">
+                {e.selfie ? (
+                  <img
+                    src={e.selfie}
+                    alt="selfie"
+                    className="w-12 h-12 rounded-full object-cover border"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-muted" />
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold truncate">
                     {emp?.name ?? "?"} · {sh?.name ?? "?"}
