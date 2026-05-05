@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Camera, RefreshCw } from "lucide-react";
+import { Camera } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -94,8 +94,12 @@ export const SelfieCapture = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onCancel()}>
-      <DialogContent className="max-w-xs rounded-2xl">
+    <Dialog open={open}>
+      <DialogContent
+        className="max-w-xs rounded-2xl [&>button]:hidden"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>Selfie Check-in (required)</DialogTitle>
         </DialogHeader>
