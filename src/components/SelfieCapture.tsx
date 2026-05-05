@@ -6,12 +6,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Camera, RefreshCw } from "lucide-react";
+import { Camera } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
   open: boolean;
-  onCancel: () => void;
+  onCancel: () => void; // only called on camera failure
   onCapture: (dataUrl: string) => void;
   autoCaptureSeconds?: number;
 }
@@ -94,10 +94,14 @@ export const SelfieCapture = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onCancel()}>
-      <DialogContent className="max-w-xs rounded-2xl">
+    <Dialog open={open}>
+      <DialogContent
+        className="max-w-xs rounded-2xl [&>button]:hidden"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
-          <DialogTitle>Selfie Check-in</DialogTitle>
+          <DialogTitle>Selfie Check-in (required)</DialogTitle>
         </DialogHeader>
         <div className="relative aspect-square rounded-xl overflow-hidden bg-muted">
           <video
@@ -120,11 +124,8 @@ export const SelfieCapture = ({
           )}
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={onCancel}>
-            Skip
-          </Button>
           <Button
-            className="flex-1"
+            className="w-full"
             disabled={!ready}
             onClick={() => {
               setCount(0);
