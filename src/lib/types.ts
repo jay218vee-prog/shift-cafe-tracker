@@ -35,4 +35,5 @@ export interface TimeEntry {
   startedAt: number;
   endedAt: number | null;
   note?: string;
+  selfie?: string; // data URL captured at clock-in
 }
