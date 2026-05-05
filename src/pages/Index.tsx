@@ -74,7 +74,7 @@ const Index = () => {
     setSelfieOpen(true);
   };
 
-  const finalizeClockIn = (selfie?: string) => {
+  const finalizeClockIn = (selfie: string) => {
     if (!pending) return;
     const entry: TimeEntry = {
       id: crypto.randomUUID(),
@@ -207,7 +207,10 @@ const Index = () => {
 
       <SelfieCapture
         open={selfieOpen}
-        onCancel={() => finalizeClockIn(undefined)}
+        onCancel={() => {
+          setSelfieOpen(false);
+          setPending(null);
+        }}
         onCapture={(d) => finalizeClockIn(d)}
       />
     </div>
